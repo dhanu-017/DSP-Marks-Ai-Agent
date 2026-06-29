@@ -1,7 +1,10 @@
+```python
+```python
+```python
 # ============================================================
-# SmartMarks AI Agent - Gemini Vision
+# DSP Marks AI Agent - Gemini Vision
 # Upload MULTIPLE photos → Get ONE combined Excel.
-# API key auto-loaded from .env — no input needed
+# Works on BOTH local (.env) AND Streamlit Cloud (secrets)
 # ============================================================
 
 import streamlit as st
@@ -14,11 +17,19 @@ import os
 import google.generativeai as genai
 from PIL import Image
 from datetime import datetime
-from dotenv import load_dotenv
 
-# Load API key from .env file
-load_dotenv()
-API_KEY = os.getenv("GEMINI_API_KEY")
+# ============================================================
+# API KEY - Works both locally and on Streamlit Cloud
+# ============================================================
+try:
+    API_KEY = st.secrets["GEMINI_API_KEY"]
+except Exception:
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
+    API_KEY = os.getenv("GEMINI_API_KEY")
 
 # ============================================================
 # PAGE CONFIG
@@ -34,7 +45,7 @@ st.set_page_config(
 # ============================================================
 
 def get_gemini_model():
-    """Initialize Gemini Vision model using .env key."""
+    """Initialize Gemini Vision model."""
     genai.configure(api_key=API_KEY)
     model = genai.GenerativeModel("gemini-2.5-flash")
     return model
@@ -110,8 +121,9 @@ def main():
 
     # Check if API key exists
     if not API_KEY:
-        st.error("❌ API key not found! Add your key in the `.env` file:")
-        st.code("GEMINI_API_KEY=your_api_key_here", language="text")
+        st.error("❌ API key not found!")
+        st.info("**Local:** Add key in `.env` file\n\n**Streamlit Cloud:** Add key in Settings → Secrets")
+        st.code('GEMINI_API_KEY = "your_key_here"', language="toml")
         st.stop()
 
     st.divider()
@@ -148,25 +160,24 @@ def main():
                     text=f"🤖 Reading file {idx + 1}/{len(uploaded_files)}: {file.name}"
                 )
 
-                with st.spinner(f"Processing {file.name}..."):
-                    try:
-                        if model is None:
-                            model = get_gemini_model()
+                try:
+                    if model is None:
+                        model = get_gemini_model()
 
-                        image = Image.open(file)
-                        df = extract_marks_from_image(model, image)
+                    image = Image.open(file)
+                    df = extract_marks_from_image(model, image)
 
-                        if not df.empty:
-                            df["Source File"] = file.name
-                            all_dfs.append(df)
-                            st.success(f"✅ {file.name} → {len(df)} students extracted")
-                        else:
-                            st.warning(f"⚠️ {file.name} → No data found")
+                    if not df.empty:
+                        df["Source File"] = file.name
+                        all_dfs.append(df)
+                        st.success(f"✅ {file.name} → {len(df)} students extracted")
+                    else:
+                        st.warning(f"⚠️ {file.name} → No data found")
 
-                    except json.JSONDecodeError:
-                        st.error(f"❌ {file.name} → Could not parse. Try a clearer photo.")
-                    except Exception as e:
-                        st.error(f"❌ {file.name} → Error: {str(e)}")
+                except json.JSONDecodeError:
+                    st.error(f"❌ {file.name} → Could not parse. Try a clearer photo.")
+                except Exception as e:
+                    st.error(f"❌ {file.name} → Error: {str(e)}")
 
             progress.progress(1.0, text="✅ All files processed!")
 
