@@ -166,7 +166,7 @@ def main():
                     df = extract_marks_from_image(model, image)
 
                     if not df.empty:
-                        df["Source File"] = file.name
+                        #df["Source File"] = file.name
                         all_dfs.append(df)
                         st.success(f"✅ {file.name} → {len(df)} students extracted")
                     else:
