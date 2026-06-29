@@ -1,6 +1,4 @@
-```python
-```python
-```python
+
 # ============================================================
 # DSP Marks AI Agent - Gemini Vision
 # Upload MULTIPLE photos → Get ONE combined Excel.
